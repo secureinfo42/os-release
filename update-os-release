@@ -1,0 +1,34 @@
+#!/bin/sh
+
+log="/private/var/log/system_profile.log"
+[ ! -f "$log" ] && sudo system_profiler|sudo tee "$log" 2>&1
+
+NAME="`sudo grep -v 'Previous System Version' "$log"|awk -F': ' '/System Version/ { print $2 }'|awk '{ print $1 }'`"
+ID=`uname`
+ID_LIKE=$ID
+SYS_VERSION=`sudo grep -v 'Previous System Version' "$log"|awk -F': ' '/System Version/ { print $2 }'`
+OS_VERSION=`sudo grep -v 'Previous System Version'  "$log"|awk -F': ' '/Mac OS Version/ { print $2 }'`
+VERSION="`echo $SYS_VERSION|awk '{ print $2 }'`"
+VERSION_ID=$VERSION
+KERNEL_VERSION=`uname -r`
+XNU_VERSION=`sysctl kern.version|awk -F'; ' '{ print $2 }'`
+ANSI_COLOR="1;31"
+HOME_URL="https://www.apple.com/"
+VERSION_CODENAME=`strings -n 12 /System/Library/CoreServices/MajorOSInfo.bundle/Contents/Resources/en_GB.lproj/Localizable.strings|grep -oE 'macos/\w+'|cut -d/ -f2`
+PRETTY_NAME=`echo $(echo "$VERSION_CODENAME"|grep -o ^.|tr 'a-z' 'A-Z')$(echo "$VERSION_CODENAME"|sed 's/^.//1')` # Capitalize
+
+cat << EOD |sudo tee /etc/os-release
+PRETTY_NAME="$NAME $PRETTY_NAME"
+NAME="$NAME"
+ID=$ID
+VERSION="$VERSION"
+VERSION_ID="$VERSION"
+VERSION_CODENAME="$VERSION_CODENAME"
+ID_LIKE=$NAME
+KERNEL_VERSION="$KERNEL_VERSION"
+XNU_VERSION="$XNU_VERSION"
+ANSI_COLOR="1;31"
+HOME_URL="https://www.apple.com/"
+EOD
+
+
